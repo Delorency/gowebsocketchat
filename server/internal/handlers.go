@@ -12,11 +12,15 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{}
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
 type IHandler interface {
 	CreateNewChat(w http.ResponseWriter, r *http.Request)
 	SendMessage(w http.ResponseWriter, r *http.Request)
+	ListChats(w http.ResponseWriter, r *http.Request)
 }
 
 type handler struct {
@@ -28,13 +32,6 @@ func NewHandler(storage storage.IStorage) IHandler {
 }
 
 func (h *handler) CreateNewChat(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	if r.Method != http.MethodPost {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
-	}
-
 	id, err := h.storage.AddChat()
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -49,16 +46,23 @@ func (h *handler) CreateNewChat(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Created new chat room with id: %d", id)
 }
 
-func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (h *handler) ListChats(w http.ResponseWriter, r *http.Request) {
+	var res struct {
+		List []int `json:"list"`
+	}
+	res.List = h.storage.ListChats()
 
+	json.NewEncoder(w).Encode(res)
+}
+
+func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.Header.Get("Chat-ID"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("'Chat-ID' header does not exist"))
 		return
 	}
-	name := r.Header.Get("Chat-Name")
+	name := r.Header.Get("Client-Name")
 	if name == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("'Chat-Name' header does not exist"))
@@ -91,7 +95,7 @@ func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		b := bytes.NewBufferString(fmt.Sprintf("%s: ", name))
+		b := bytes.NewBufferString(fmt.Sprintf("[%s]: ", name))
 		_, err = b.Write(message)
 
 		if err != nil {

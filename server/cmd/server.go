@@ -20,7 +20,7 @@ var port = flag.Int("p", 8080, "Port")
 func main() {
 	flag.Parse()
 
-	storage := storage.NewStorage()
+	storage := storage.NewStorage(30)
 
 	server := internal.NewHTTPServer(storage, fmt.Sprintf("%s:%d", *host, *port))
 

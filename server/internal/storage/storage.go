@@ -10,17 +10,19 @@ import (
 type IStorage interface {
 	AddChat() (int, error)
 	GetChat(id int) *chat
+	ListChats() []int
 }
 
 type Storage struct {
 	chats map[int]*chat
 	mu    sync.RWMutex
 	index int
+	size  int
 }
 
 func (s *Storage) AddChat() (int, error) {
-	if s.index > 60 {
-		return 0, fmt.Errorf("Maximum chat quantity (60)")
+	if s.index > s.size {
+		return 0, fmt.Errorf("Maximum chat quantity (%d)", s.size)
 	}
 	s.mu.Lock()
 	id := s.index
@@ -47,6 +49,16 @@ func (s *Storage) GetChat(id int) *chat {
 	return chatptr
 }
 
-func NewStorage() IStorage {
-	return &Storage{chats: make(map[int]*chat), index: 1}
+func (s *Storage) ListChats() []int {
+	list := make([]int, s.size)
+	i := 0
+	for index, _ := range s.chats {
+		list[i] = index
+		i++
+	}
+	return list[:i]
+}
+
+func NewStorage(size int) IStorage {
+	return &Storage{chats: make(map[int]*chat), index: 1, size: size}
 }
