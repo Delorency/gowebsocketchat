@@ -35,11 +35,18 @@ func (h *handler) CreateNewChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := h.storage.AddChat()
+	id, err := h.storage.AddChat()
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 
 	json.NewEncoder(w).Encode(map[string]int{"id": id})
+
+	log.Printf("Created new chat room with id: %d", id)
 }
 
 func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {

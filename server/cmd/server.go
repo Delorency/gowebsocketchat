@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-var host = flag.String("h", "localhost", "Server IP address")
-var port = flag.Int("p", 8080, "Server port")
+var host = flag.String("h", "localhost", "IP address")
+var port = flag.Int("p", 8080, "Port")
 
 func main() {
 	flag.Parse()
