@@ -1,15 +1,12 @@
 package internal
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
-	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -79,35 +76,9 @@ func ConnectToChat(host string, port int, chatID, name string) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	go func() {
-		defer cancel()
-		for {
-			_, message, err := conn.ReadMessage()
-			if err != nil {
-				log.Println("Disconnect")
-				break
-			}
-			fmt.Println(string(message))
-		}
-	}()
-	go func() {
-		defer cancel()
-		reader := bufio.NewReader(os.Stdin)
-		for {
-			input, err := reader.ReadString('\n')
-			if err != nil {
-				continue
-			}
-			input = strings.TrimSpace(input)
-			ClearLastNRows(1)
+	go readMessageProcessor(conn, cancel)
 
-			err = conn.WriteMessage(websocket.TextMessage, []byte(input))
-			if err != nil {
-				log.Println("Send message error")
-				break
-			}
-		}
-	}()
+	go sendMessageProcessor(conn, cancel)
 
 	<-ctx.Done()
 }
