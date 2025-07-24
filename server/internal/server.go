@@ -22,7 +22,7 @@ func NewHTTPServer(storage storage.IStorage, addr string) *http.Server {
 			return
 		}
 	})
-	router.HandleFunc("/ws/connect", handler.SendMessage)
+	router.HandleFunc("/connect", handler.Connect)
 
 	return &http.Server{Addr: addr, Handler: router}
 }

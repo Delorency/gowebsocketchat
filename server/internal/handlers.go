@@ -19,8 +19,8 @@ var upgrader = websocket.Upgrader{
 
 type IHandler interface {
 	CreateNewChat(w http.ResponseWriter, r *http.Request)
-	SendMessage(w http.ResponseWriter, r *http.Request)
 	ListChats(w http.ResponseWriter, r *http.Request)
+	Connect(w http.ResponseWriter, r *http.Request)
 }
 
 type handler struct {
@@ -55,7 +55,7 @@ func (h *handler) ListChats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Connect(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.Header.Get("Chat-ID"))
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -68,7 +68,6 @@ func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("'Chat-Name' header does not exist"))
 		return
 	}
-
 	chat := h.storage.GetChat(id)
 	if chat == nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -87,6 +86,7 @@ func (h *handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error to connect client")
 		return
 	}
+
 	go chat.ConnectClient(conn, name)
 
 	for {

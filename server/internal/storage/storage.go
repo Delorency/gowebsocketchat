@@ -20,8 +20,12 @@ type Storage struct {
 	size  int
 }
 
+func NewStorage(size int) IStorage {
+	return &Storage{chats: make(map[int]*chat), index: 1, size: size}
+}
+
 func (s *Storage) AddChat() (int, error) {
-	if s.index > s.size {
+	if len(s.chats) > s.size {
 		return 0, fmt.Errorf("Maximum chat quantity (%d)", s.size)
 	}
 	s.mu.Lock()
@@ -52,13 +56,9 @@ func (s *Storage) GetChat(id int) *chat {
 func (s *Storage) ListChats() []int {
 	list := make([]int, s.size)
 	i := 0
-	for index, _ := range s.chats {
+	for index := range s.chats {
 		list[i] = index
 		i++
 	}
 	return list[:i]
-}
-
-func NewStorage(size int) IStorage {
-	return &Storage{chats: make(map[int]*chat), index: 1, size: size}
 }
